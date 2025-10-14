@@ -1,0 +1,133 @@
+name: Deploy Azure Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'bicep/**'
+      - 'parameters/**'
+      - '.github/workflows/deploy-infrastructure.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'bicep/**'
+      - 'parameters/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+env:
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+
+jobs:
+  validate:
+    name: Validate Bicep Templates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Azure CLI
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate Bicep templates
+        run: |
+          az bicep build --file bicep/main.bicep
+          echo "Bicep template validation completed successfully"
+
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/dev' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+    environment: development
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Azure CLI
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create Resource Group
+        run: |
+          az group create \
+            --name rg-diriyah-dev \
+            --location "East US 2" \
+            --tags project=Diriyah environment=dev managedBy=Bicep
+
+      - name: Deploy to Development
+        run: |
+          az deployment group create \
+            --resource-group rg-diriyah-dev \
+            --template-file bicep/main.bicep \
+            --parameters parameters/dev.bicepparam \
+            --verbose
+
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod')
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Azure CLI
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create Resource Group
+        run: |
+          az group create \
+            --name rg-diriyah-prod \
+            --location "East US 2" \
+            --tags project=Diriyah environment=prod managedBy=Bicep
+
+      - name: Deploy to Production
+        run: |
+          az deployment group create \
+            --resource-group rg-diriyah-prod \
+            --template-file bicep/main.bicep \
+            --parameters parameters/prod.bicepparam \
+            --verbose
