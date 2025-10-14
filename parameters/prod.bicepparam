@@ -3,10 +3,10 @@ using '../bicep/main.bicep'
 // Production environment parameters
 param location = 'East US 2'
 param environment = 'prod'
-param projectName = 'diriyah'
+param projectName = 'myproject'
 
 param tags = {
-  project: 'Diriyah'
+  project: 'MyProject'
   environment: 'prod'
   managedBy: 'Bicep'
   deployedFrom: 'GitHub Actions'

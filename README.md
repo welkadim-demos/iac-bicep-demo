@@ -1,6 +1,6 @@
-# Diriyah IaC PoC
+# Azure IaC Project
 
-This repository contains Infrastructure as Code (IaC) templates using Azure Bicep for the Diriyah project.
+This repository contains Infrastructure as Code (IaC) templates using Azure Bicep for your cloud infrastructure deployment.
 
 ## Structure
 

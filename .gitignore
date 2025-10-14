@@ -1,10 +1,11 @@
-# Bicep files
-*.bicep
+# Generated ARM template files (keep Bicep source files)
+*.json
+!package*.json
+!tsconfig*.json
 !*.bicepparam
 
-# ARM template files
-*.json
-!*.bicepparam
+# Build outputs from Bicep
+*.arm.json
 
 # Azure CLI
 .azure/

@@ -6,10 +6,10 @@ param(
     [string]$SubscriptionId,
     
     [Parameter(Mandatory = $false)]
-    [string]$ServicePrincipalName = "sp-diriyah-github-actions",
+    [string]$ServicePrincipalName = "sp-myproject-github-actions",
     
     [Parameter(Mandatory = $false)]
-    [string]$ResourceGroupName = "rg-diriyah"
+    [string]$ResourceGroupName = "rg-myproject"
 )
 
 # Login to Azure (if not already logged in)
