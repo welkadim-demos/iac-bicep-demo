@@ -20,6 +20,8 @@ param tags object = {
 var resourcePrefix = '${projectName}-${environment}'
 var storageAccountName = 'st${replace(resourcePrefix, '-', '')}${uniqueString(resourceGroup().id)}'
 var searchServiceName = 'srch-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
+var aiFoundryName = 'ai-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
+var botServiceName = 'bot-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
 
 // Storage Account Module
 module storageAccount 'modules/storage-account.bicep' = {
@@ -49,6 +51,38 @@ module searchService 'modules/search-service.bicep' = {
   }
 }
 
+// AI Foundry Module
+module aiFoundry 'modules/ai-foundry.bicep' = {
+  params: {
+    aiFoundryName: aiFoundryName
+    location: location
+    skuName: 'S0'
+    publicNetworkAccess: 'Enabled'
+    disableLocalAuth: false
+    customSubDomainName: replace(aiFoundryName, '-', '')
+    tags: tags
+  }
+}
+
+// Bot Service Module
+module botService 'modules/bot-service.bicep' = {
+  params: {
+    botServiceName: botServiceName
+    location: location
+    displayName: '${projectName} Bot ${environment}'
+    botDescription: 'Conversational AI bot for ${projectName} project'
+    endpoint: 'https://${botServiceName}.azurewebsites.net/api/messages'
+    msaAppId: '00000000-0000-0000-0000-000000000000' // This should be replaced with actual App Registration ID
+    msaAppType: 'MultiTenant'
+    skuName: 'F0'
+    kind: 'azurebot'
+    disableLocalAuth: false
+    isStreamingSupported: true
+    publicNetworkAccess: 'Enabled'
+    tags: tags
+  }
+}
+
 // Outputs
 output resourceGroupName string = resourceGroup().name
 output location string = location
@@ -59,3 +93,11 @@ output storageAccountId string = storageAccount.outputs.storageAccountId
 output searchServiceName string = searchService.outputs.searchServiceName
 output searchServiceId string = searchService.outputs.searchServiceId
 output searchServiceUrl string = searchService.outputs.searchServiceUrl
+output aiFoundryName string = aiFoundry.outputs.aiFoundryName
+output aiFoundryId string = aiFoundry.outputs.aiFoundryId
+output aiFoundryEndpoint string = aiFoundry.outputs.aiFoundryEndpoint
+output aiFoundryPrincipalId string = aiFoundry.outputs.aiFoundryPrincipalId
+output botServiceName string = botService.outputs.botServiceName
+output botServiceId string = botService.outputs.botServiceId
+output botServiceEndpoint string = botService.outputs.botServiceEndpoint
+output botServiceMsaAppId string = botService.outputs.botServiceMsaAppId
