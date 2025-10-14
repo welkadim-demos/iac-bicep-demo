@@ -40,15 +40,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Azure CLI
+      - name: Validate Bicep templates
         uses: Azure/cli@v2.2.0
         with:
           azcliversion: latest
-
-      - name: Validate Bicep templates
-        run: |
-          az bicep build --file bicep/main.bicep
-          echo "Bicep template validation completed successfully"
+          inlineScript: |
+            az bicep build --file bicep/main.bicep
+            echo "Bicep template validation completed successfully"      
 
   deploy-dev:
     name: Deploy to Development
@@ -65,6 +63,8 @@ jobs:
         uses: azure/cli@v2
         with:
           azcliversion: latest
+          inlineScript: |
+            az version
 
       - name: Login to Azure
         uses: Azure/login@v2.3.0
