@@ -73,21 +73,18 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Create Resource Group
-        run: |
-          RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_DEV }}"
-          az group create \
-            --name $RESOURCE_GROUP_NAME \
-            --location "${{ env.LOCATION }}"
-
       - name: Deploy to Development
-        run: |
-          RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_DEV }}"
-          az deployment group create \
-            --resource-group $RESOURCE_GROUP_NAME \
-            --template-file bicep/main.bicep \
-            --parameters parameters/dev.bicepparam \
-            --verbose
+        uses: Azure/cli@v2.2.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_DEV }}"
+            az deployment group create \
+              --resource-group $RESOURCE_GROUP_NAME \
+              --template-file bicep/main.bicep \
+              --parameters parameters/dev.bicepparam \
+              --verbose  
+
 
   deploy-prod:
     name: Deploy to Production
@@ -100,11 +97,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Azure CLI
-        uses: azure/cli@v2
-        with:
-          azcliversion: latest
-
       - name: Login to Azure
         uses: Azure/login@v2.3.0
         with:
@@ -112,18 +104,15 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      
       - name: Create Resource Group
-        run: |
-          RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_PROD }}"
-          az group create \
-            --name $RESOURCE_GROUP_NAME \
-            --location "${{ env.LOCATION }}"
-
-      - name: Deploy to Production
-        run: |
-          RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_PROD }}"
-          az deployment group create \
-            --resource-group $RESOURCE_GROUP_NAME \
-            --template-file bicep/main.bicep \
-            --parameters parameters/prod.bicepparam \
-            --verbose
+        uses: Azure/cli@v2.2.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_PROD }}"
+            az deployment group create \
+              --resource-group $RESOURCE_GROUP_NAME \
+              --template-file bicep/main.bicep \
+              --parameters parameters/prod.bicepparam \
+              --verbose
