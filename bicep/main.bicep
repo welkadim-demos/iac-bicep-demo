@@ -18,12 +18,25 @@ param tags object = {
 
 // Variables for consistent naming
 var resourcePrefix = '${projectName}-${environment}'
+var storageAccountName = 'st${replace(resourcePrefix, '-', '')}${uniqueString(resourceGroup().id)}'
 
-// Example resource group output (if deploying to subscription scope)
+// Storage Account Module
+module storageAccount 'modules/storage-account.bicep' = {
+  params: {
+    storageAccountName: storageAccountName
+    location: location
+    skuName: 'Standard_LRS'
+    kind: 'StorageV2'
+    tags: tags
+    allowBlobPublicAccess: false
+    supportsHttpsTrafficOnly: true
+  }
+}
+
+// Outputs
 output resourceGroupName string = resourceGroup().name
 output location string = location
 output environment string = environment
 output resourcePrefix string = resourcePrefix
-
-// Add your Azure resources here
-// Example: Storage Account, App Service, Key Vault, etc.
+output storageAccountName string = storageAccount.outputs.storageAccountName
+output storageAccountId string = storageAccount.outputs.storageAccountId
