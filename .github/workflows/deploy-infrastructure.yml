@@ -30,6 +30,7 @@ env:
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  LOCATION: ${{ vars.LOCATION || 'East US 2' }}
 
 jobs:
   validate:
@@ -43,13 +44,6 @@ jobs:
         uses: Azure/cli@v2.2.0
         with:
           azcliversion: latest
-
-      - name: Login to Azure
-        uses: Azure/login@v2.3.0
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Validate Bicep templates
         run: |
@@ -81,15 +75,16 @@ jobs:
 
       - name: Create Resource Group
         run: |
+          RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_DEV }}"
           az group create \
-            --name rg-myproject-dev \
-            --location "East US 2" \
-            --tags project=MyProject environment=dev managedBy=Bicep
+            --name $RESOURCE_GROUP_NAME \
+            --location "${{ env.LOCATION }}"
 
       - name: Deploy to Development
         run: |
+          RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_DEV }}"
           az deployment group create \
-            --resource-group rg-myproject-dev \
+            --resource-group $RESOURCE_GROUP_NAME \
             --template-file bicep/main.bicep \
             --parameters parameters/dev.bicepparam \
             --verbose
@@ -119,15 +114,16 @@ jobs:
 
       - name: Create Resource Group
         run: |
+          RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_PROD }}"
           az group create \
-            --name rg-myproject-prod \
-            --location "East US 2" \
-            --tags project=MyProject environment=prod managedBy=Bicep
+            --name $RESOURCE_GROUP_NAME \
+            --location "${{ env.LOCATION }}"
 
       - name: Deploy to Production
         run: |
+          RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_PROD }}"
           az deployment group create \
-            --resource-group rg-myproject-prod \
+            --resource-group $RESOURCE_GROUP_NAME \
             --template-file bicep/main.bicep \
             --parameters parameters/prod.bicepparam \
             --verbose
