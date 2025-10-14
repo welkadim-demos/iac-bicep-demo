@@ -22,6 +22,7 @@ var storageAccountName = 'st${replace(resourcePrefix, '-', '')}${uniqueString(re
 var searchServiceName = 'srch-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
 var aiFoundryName = 'ai-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
 var botServiceName = 'bot-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
+var containerAppEnvironmentName = 'cae-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
 
 // Storage Account Module
 module storageAccount 'modules/storage-account.bicep' = {
@@ -83,6 +84,20 @@ module botService 'modules/bot-service.bicep' = {
   }
 }
 
+// Container App Environment Module
+module containerAppEnvironment 'modules/container-app-environment.bicep' = {
+  params: {
+    containerAppEnvironmentName: containerAppEnvironmentName
+    location: location
+    zoneRedundant: false
+    internal: false
+    infrastructureResourceGroup: 'rg-${containerAppEnvironmentName}-infra'
+    mtlsEnabled: false
+    peerTrafficEncryptionEnabled: false
+    tags: tags
+  }
+}
+
 // Outputs
 output resourceGroupName string = resourceGroup().name
 output location string = location
@@ -101,3 +116,7 @@ output botServiceName string = botService.outputs.botServiceName
 output botServiceId string = botService.outputs.botServiceId
 output botServiceEndpoint string = botService.outputs.botServiceEndpoint
 output botServiceMsaAppId string = botService.outputs.botServiceMsaAppId
+output containerAppEnvironmentName string = containerAppEnvironment.outputs.containerAppEnvironmentName
+output containerAppEnvironmentId string = containerAppEnvironment.outputs.containerAppEnvironmentId
+output containerAppEnvironmentDefaultDomain string = containerAppEnvironment.outputs.defaultDomain
+output containerAppEnvironmentStaticIp string = containerAppEnvironment.outputs.staticIp
