@@ -61,14 +61,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Azure CLI
-        uses: azure/cli@v2
-        with:
-          azcliversion: latest
-          inlineScript: |
-            az version
+        uses: actions/checkout@v4      
 
       - name: Login to Azure
         uses: Azure/login@v2.3.0

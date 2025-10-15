@@ -43,7 +43,7 @@ param tags object = {}
 param ipRules array = []
 
 // Create Azure AI Search Service
-resource searchService 'Microsoft.Search/searchServices@2023-11-01' = {
+resource searchService 'Microsoft.Search/searchServices@2025-05-01' = {
   name: searchServiceName
   location: location
   tags: tags

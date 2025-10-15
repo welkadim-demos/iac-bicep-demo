@@ -25,7 +25,7 @@ param customSubDomainName string = ''
 param tags object = {}
 
 // AI Foundry service (Cognitive Services account with AIServices kind)
-resource aiFoundry 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
+resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
   name: aiFoundryName
   location: location
   kind: 'AIServices'

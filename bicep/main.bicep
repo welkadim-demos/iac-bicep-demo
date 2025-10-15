@@ -8,6 +8,48 @@ param environment string = 'dev'
 @description('Project name prefix for resource naming')
 param projectName string = 'myproject'
 
+@description('Location for Azure Bot Service (must be global, westeurope, westus, or centralindia)')
+@allowed(['global', 'westeurope', 'westus', 'centralindia'])
+param botServiceLocation string = 'global'
+
+@description('Storage Account name (3-24 chars, lowercase letters and numbers only)')
+@minLength(3)
+@maxLength(24)
+param storageAccountName string = 'st${replace('${projectName}${environment}', '-', '')}${uniqueString(resourceGroup().id)}'
+
+@description('Azure AI Search service name (2-60 chars, lowercase letters, numbers, hyphens)')
+@minLength(2)
+@maxLength(60)
+param searchServiceName string = 'srch-${projectName}-${environment}-${uniqueString(resourceGroup().id)}'
+
+@description('AI Foundry service name (2-64 chars, alphanumeric, hyphens)')
+@minLength(2)
+@maxLength(64)
+param aiFoundryName string = 'ai-${projectName}-${environment}-${uniqueString(resourceGroup().id)}'
+
+@description('Bot Service name (2-64 chars, alphanumeric, hyphens, periods, underscores)')
+@minLength(2)
+@maxLength(64)
+param botServiceName string = 'bot-${projectName}-${environment}-${uniqueString(resourceGroup().id)}'
+
+@description('Container App Environment name (2-32 chars, lowercase letters, numbers, hyphens)')
+@minLength(2)
+@maxLength(32)
+param containerAppEnvironmentName string = 'cae-${projectName}-${environment}-${take(uniqueString(resourceGroup().id), 8)}'
+
+@description('Bot Service authentication type')
+@allowed(['SingleTenant', 'UserAssignedMSI'])
+param botAuthType string = 'SingleTenant'
+
+@description('Microsoft App ID - Required for SingleTenant with existing App Registration, leave empty for auto-creation')
+param botMsaAppId string = ''
+
+@description('Existing User Managed Identity Resource ID for UserAssignedMSI authentication (leave empty to create new)')
+param existingUserManagedIdentityId string = ''
+
+@description('Azure AD Tenant ID - Required for SingleTenant bot authentication (leave empty to use deployment tenant)')
+param botTenantId string = ''
+
 @description('Common tags to apply to all resources')
 param tags object = {
   project: 'MyProject'
@@ -18,11 +60,6 @@ param tags object = {
 
 // Variables for consistent naming
 var resourcePrefix = '${projectName}-${environment}'
-var storageAccountName = 'st${replace(resourcePrefix, '-', '')}${uniqueString(resourceGroup().id)}'
-var searchServiceName = 'srch-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
-var aiFoundryName = 'ai-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
-var botServiceName = 'bot-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
-var containerAppEnvironmentName = 'cae-${resourcePrefix}-${uniqueString(resourceGroup().id)}'
 
 // Storage Account Module
 module storageAccount 'modules/storage-account.bicep' = {
@@ -69,12 +106,15 @@ module aiFoundry 'modules/ai-foundry.bicep' = {
 module botService 'modules/bot-service.bicep' = {
   params: {
     botServiceName: botServiceName
-    location: location
+    botServiceLocation: botServiceLocation
     displayName: '${projectName} Bot ${environment}'
     botDescription: 'Conversational AI bot for ${projectName} project'
     endpoint: 'https://${botServiceName}.azurewebsites.net/api/messages'
-    msaAppId: '00000000-0000-0000-0000-000000000000' // This should be replaced with actual App Registration ID
-    msaAppType: 'MultiTenant'
+    msaAppId: botMsaAppId
+    msaAppType: botAuthType
+    msaAppTenantId: botTenantId
+    msaAppMSIResourceId: existingUserManagedIdentityId
+    userManagedIdentityName: '${botServiceName}-identity'
     skuName: 'F0'
     kind: 'azurebot'
     disableLocalAuth: false
@@ -92,8 +132,7 @@ module containerAppEnvironment 'modules/container-app-environment.bicep' = {
     zoneRedundant: false
     internal: false
     infrastructureResourceGroup: 'rg-${containerAppEnvironmentName}-infra'
-    mtlsEnabled: false
-    peerTrafficEncryptionEnabled: false
+    daprEnabled: false
     tags: tags
   }
 }
@@ -112,10 +151,20 @@ output aiFoundryName string = aiFoundry.outputs.aiFoundryName
 output aiFoundryId string = aiFoundry.outputs.aiFoundryId
 output aiFoundryEndpoint string = aiFoundry.outputs.aiFoundryEndpoint
 output aiFoundryPrincipalId string = aiFoundry.outputs.aiFoundryPrincipalId
+
+// Bot Service Outputs
+@description('The name of the Bot Service')
 output botServiceName string = botService.outputs.botServiceName
+
+@description('The resource ID of the Bot Service')
 output botServiceId string = botService.outputs.botServiceId
+
+@description('The messaging endpoint of the Bot Service')
 output botServiceEndpoint string = botService.outputs.botServiceEndpoint
+
+@description('The Microsoft App ID of the Bot Service')
 output botServiceMsaAppId string = botService.outputs.botServiceMsaAppId
+
 output containerAppEnvironmentName string = containerAppEnvironment.outputs.containerAppEnvironmentName
 output containerAppEnvironmentId string = containerAppEnvironment.outputs.containerAppEnvironmentId
 output containerAppEnvironmentDefaultDomain string = containerAppEnvironment.outputs.defaultDomain
