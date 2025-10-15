@@ -32,6 +32,10 @@ env:
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   LOCATION: ${{ vars.LOCATION || 'East US 2' }}
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   validate:
     name: Validate Bicep Templates
