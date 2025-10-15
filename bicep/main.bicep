@@ -99,6 +99,7 @@ module botService 'modules/bot-service.bicep' = {
     endpoint: 'https://${botServiceName}.azurewebsites.net/api/messages'
     msaAppId: '00000000-0000-0000-0000-000000000000' // This should be replaced with actual App Registration ID
     msaAppType: 'SingleTenant'
+    msaAppTenantId: tenant().tenantId // Use the current tenant ID
     skuName: 'F0'
     kind: 'azurebot'
     disableLocalAuth: false
@@ -116,8 +117,7 @@ module containerAppEnvironment 'modules/container-app-environment.bicep' = {
     zoneRedundant: false
     internal: false
     infrastructureResourceGroup: 'rg-${containerAppEnvironmentName}-infra'
-    mtlsEnabled: false
-    peerTrafficEncryptionEnabled: false
+    daprEnabled: false
     tags: tags
   }
 }
