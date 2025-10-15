@@ -4,8 +4,9 @@
 @description('The name of the Bot Service')
 param botServiceName string
 
-@description('The location where the Bot Service will be deployed')
-param location string = resourceGroup().location
+@description('The location for the Bot Service resource')
+@allowed(['global', 'westeurope', 'westus', 'centralindia'])
+param botServiceLocation string = 'global'
 
 @description('The display name of the bot')
 param displayName string
@@ -20,8 +21,8 @@ param endpoint string
 param msaAppId string
 
 @description('Microsoft App Type for the bot')
-@allowed(['UserAssignedMSI', 'SingleTenant', 'MultiTenant'])
-param msaAppType string = 'MultiTenant'
+@allowed(['UserAssignedMSI', 'SingleTenant'])
+param msaAppType string = 'SingleTenant'
 
 @description('Microsoft App Tenant Id for the bot')
 param msaAppTenantId string = ''
@@ -62,7 +63,7 @@ param tags object = {}
 // Bot Service resource
 resource botService 'Microsoft.BotService/botServices@2022-09-15' = {
   name: botServiceName
-  location: location
+  location: botServiceLocation  // Bot Service requires 'global' location
   kind: kind
   tags: tags
   sku: {

@@ -70,9 +70,7 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' 
         customerId: logAnalyticsCustomerId
         sharedKey: logAnalyticsSharedKey
       }
-    } : {
-      destination: 'none'
-    }
+    } : null
     daprAIInstrumentationKey: !empty(daprAIInstrumentationKey) ? daprAIInstrumentationKey : null
     daprAIConnectionString: !empty(daprAIConnectionString) ? daprAIConnectionString : null
     workloadProfiles: !empty(workloadProfiles) ? workloadProfiles : null
