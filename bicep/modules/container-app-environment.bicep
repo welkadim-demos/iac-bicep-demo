@@ -111,7 +111,7 @@ output provisioningState string = containerAppEnvironment.properties.provisionin
 output eventStreamEndpoint string = containerAppEnvironment.properties.eventStreamEndpoint
 
 @description('The infrastructure resource group name')
-output infrastructureResourceGroupName string = containerAppEnvironment.properties.infrastructureResourceGroup
+output infrastructureResourceGroupName string = !empty(infrastructureResourceGroup) ? containerAppEnvironment.properties.infrastructureResourceGroup : ''
 
 @description('The custom domain verification ID')
 output customDomainVerificationId string = !empty(customDomainConfiguration) ? containerAppEnvironment.properties.customDomainConfiguration.customDomainVerificationId : ''
