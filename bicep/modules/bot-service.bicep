@@ -17,18 +17,21 @@ param botDescription string = 'Azure Bot Service created with Bicep'
 @description('The bot endpoint URL - typically your web app or function app endpoint')
 param endpoint string
 
-@description('Microsoft App ID for the bot (Azure AD Application ID)')
-param msaAppId string
+@description('Microsoft App ID for the bot (Azure AD Application ID) - Required for SingleTenant with existing App Registration, leave empty for auto-creation')
+param msaAppId string = ''
 
 @description('Microsoft App Type for the bot')
 @allowed(['UserAssignedMSI', 'SingleTenant'])
 param msaAppType string = 'SingleTenant'
 
-@description('Microsoft App Tenant Id for the bot')
+@description('Microsoft App Tenant Id - Required for SingleTenant authentication, will be set automatically to clientId for UserAssignedMSI')
 param msaAppTenantId string = ''
 
-@description('Microsoft App Managed Identity Resource Id for the bot (required if msaAppType is UserAssignedMSI)')
+@description('Microsoft App Managed Identity Resource Id for the bot (provide existing MSI ID for UserAssignedMSI)')
 param msaAppMSIResourceId string = ''
+
+@description('Name for the User Managed Identity (used when creating new MSI for UserAssignedMSI with empty msaAppId)')
+param userManagedIdentityName string = '${botServiceName}-identity'
 
 @description('The SKU name for the Bot Service')
 @allowed(['F0', 'S1'])
@@ -60,6 +63,15 @@ param publicNetworkAccess string = 'Enabled'
 @description('Tags to apply to the Bot Service')
 param tags object = {}
 
+var createNewManagedIdentity = msaAppType == 'UserAssignedMSI'  && empty(msaAppId)
+
+// User Managed Identity for Bot Service (conditional creation)
+resource userManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = if (createNewManagedIdentity) {
+  name: userManagedIdentityName
+  location: resourceGroup().location
+  tags: tags
+}
+
 // Bot Service resource
 resource botService 'Microsoft.BotService/botServices@2022-09-15' = {
   name: botServiceName
@@ -73,16 +85,17 @@ resource botService 'Microsoft.BotService/botServices@2022-09-15' = {
     displayName: displayName
     description: botDescription
     endpoint: endpoint
-    msaAppId: msaAppId
+    msaAppId: createNewManagedIdentity? userManagedIdentity.properties.clientId : msaAppId
     msaAppType: msaAppType
-    msaAppTenantId: !empty(msaAppTenantId) ? msaAppTenantId : null
-    msaAppMSIResourceId: !empty(msaAppMSIResourceId) ? msaAppMSIResourceId : null
+    msaAppTenantId: createNewManagedIdentity? userManagedIdentity.properties.tenantId : msaAppTenantId
+    msaAppMSIResourceId: createNewManagedIdentity? userManagedIdentity.id : msaAppMSIResourceId
     disableLocalAuth: disableLocalAuth
     isStreamingSupported: isStreamingSupported
     iconUrl: !empty(iconUrl) ? iconUrl : null
     developerAppInsightKey: !empty(developerAppInsightKey) ? developerAppInsightKey : null
     developerAppInsightsApplicationId: !empty(developerAppInsightsApplicationId) ? developerAppInsightsApplicationId : null
     publicNetworkAccess: publicNetworkAccess
+    
   }
 }
 
@@ -107,3 +120,12 @@ output configuredChannels array = botService.properties.configuredChannels
 
 @description('The enabled channels for the bot')
 output enabledChannels array = botService.properties.enabledChannels
+
+@description('The User Managed Identity resource ID (only applicable for UserAssignedMSI authentication)')
+output userManagedIdentityId string = createNewManagedIdentity ? userManagedIdentity!.id : ''
+
+@description('The User Managed Identity client ID (only applicable for UserAssignedMSI authentication)')
+output userManagedIdentityClientId string = createNewManagedIdentity ? userManagedIdentity!.properties.clientId : ''
+
+@description('The authentication type used by the bot')
+output authType string = msaAppType

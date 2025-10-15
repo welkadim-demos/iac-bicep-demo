@@ -37,6 +37,19 @@ param botServiceName string = 'bot-${projectName}-${environment}-${uniqueString(
 @maxLength(32)
 param containerAppEnvironmentName string = 'cae-${projectName}-${environment}-${take(uniqueString(resourceGroup().id), 8)}'
 
+@description('Bot Service authentication type')
+@allowed(['SingleTenant', 'UserAssignedMSI'])
+param botAuthType string = 'SingleTenant'
+
+@description('Microsoft App ID - Required for SingleTenant with existing App Registration, leave empty for auto-creation')
+param botMsaAppId string = ''
+
+@description('Existing User Managed Identity Resource ID for UserAssignedMSI authentication (leave empty to create new)')
+param existingUserManagedIdentityId string = ''
+
+@description('Azure AD Tenant ID - Required for SingleTenant bot authentication (leave empty to use deployment tenant)')
+param botTenantId string = ''
+
 @description('Common tags to apply to all resources')
 param tags object = {
   project: 'MyProject'
@@ -97,9 +110,11 @@ module botService 'modules/bot-service.bicep' = {
     displayName: '${projectName} Bot ${environment}'
     botDescription: 'Conversational AI bot for ${projectName} project'
     endpoint: 'https://${botServiceName}.azurewebsites.net/api/messages'
-    msaAppId: '00000000-0000-0000-0000-000000000000' // This should be replaced with actual App Registration ID
-    msaAppType: 'SingleTenant'
-    msaAppTenantId: tenant().tenantId // Use the current tenant ID
+    msaAppId: botMsaAppId
+    msaAppType: botAuthType
+    msaAppTenantId: botTenantId
+    msaAppMSIResourceId: existingUserManagedIdentityId
+    userManagedIdentityName: '${botServiceName}-identity'
     skuName: 'F0'
     kind: 'azurebot'
     disableLocalAuth: false

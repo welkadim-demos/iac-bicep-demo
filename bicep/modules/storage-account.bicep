@@ -21,7 +21,7 @@ param allowBlobPublicAccess bool = false
 @description('Enable HTTPS traffic only')
 param supportsHttpsTrafficOnly bool = true
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   name: storageAccountName
   location: location
   tags: tags

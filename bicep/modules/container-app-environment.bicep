@@ -20,13 +20,7 @@ param logAnalyticsCustomerId string = ''
 @secure()
 param logAnalyticsSharedKey string = ''
 
-@description('Application Insights instrumentation key for Dapr telemetry')
-@secure()
-param daprAIInstrumentationKey string = ''
 
-@description('Application Insights connection string for Dapr telemetry')
-@secure()
-param daprAIConnectionString string = ''
 
 @description('Name of the infrastructure resource group (optional)')
 param infrastructureResourceGroup string = ''
@@ -34,14 +28,8 @@ param infrastructureResourceGroup string = ''
 @description('Virtual network configuration')
 param vnetConfiguration object = {}
 
-@description('Workload profiles for the environment')
-param workloadProfiles array = []
-
-@description('Whether to enable mTLS authentication')
-param mtlsEnabled bool = false
-
-@description('Whether to enable peer traffic encryption')
-param peerTrafficEncryptionEnabled bool = false
+@description('Whether to enable Dapr for microservices')
+param daprEnabled bool = false
 
 @description('Custom domain configuration')
 param customDomainConfiguration object = {}
@@ -50,7 +38,7 @@ param customDomainConfiguration object = {}
 param tags object = {}
 
 // Container App Environment resource
-resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
+resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2025-01-01' = {
   name: containerAppEnvironmentName
   location: location
   tags: tags
@@ -71,20 +59,7 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' 
         sharedKey: logAnalyticsSharedKey
       }
     } : null
-    daprAIInstrumentationKey: !empty(daprAIInstrumentationKey) ? daprAIInstrumentationKey : null
-    daprAIConnectionString: !empty(daprAIConnectionString) ? daprAIConnectionString : null
-    workloadProfiles: !empty(workloadProfiles) ? workloadProfiles : null
-    peerAuthentication: mtlsEnabled ? {
-      mtls: {
-        enabled: mtlsEnabled
-      }
-    } : null
-    peerTrafficConfiguration: peerTrafficEncryptionEnabled ? {
-      encryption: {
-        enabled: peerTrafficEncryptionEnabled
-      }
-    } : null
-    customDomainConfiguration: !empty(customDomainConfiguration) ? customDomainConfiguration : null
+    daprConfiguration: daprEnabled ? {} : null
   }
 }
 
@@ -109,9 +84,6 @@ output provisioningState string = containerAppEnvironment.properties.provisionin
 
 @description('The event stream endpoint of the Container App Environment')
 output eventStreamEndpoint string = containerAppEnvironment.properties.eventStreamEndpoint
-
-@description('The infrastructure resource group name')
-output infrastructureResourceGroupName string = !empty(infrastructureResourceGroup) ? containerAppEnvironment.properties.infrastructureResourceGroup : ''
 
 @description('The custom domain verification ID')
 output customDomainVerificationId string = !empty(customDomainConfiguration) ? containerAppEnvironment.properties.customDomainConfiguration.customDomainVerificationId : ''
