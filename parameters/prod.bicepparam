@@ -9,11 +9,11 @@ param projectName = 'myproject'
 param botServiceLocation = 'westeurope'
 
 // Custom service names (following Azure naming constraints)
-param storageAccountName = 'stdemodevp224'  // 10 chars - within 24 char limit
-param searchServiceName = 'srch-demo-dev-poct224'
-param aiFoundryName = 'ai-demo-dev-poct224'
-param botServiceName = 'bot-demo-dev-poct224'
-param containerAppEnvironmentName = 'cae-demo-dev-poct224'
+param storageAccountName = 'stdemodevp324'  // 10 chars - within 24 char limit
+param searchServiceName = 'srch-demo-dev-poct324'
+param aiFoundryName = 'ai-demo-dev-poct324'
+param botServiceName = 'bot-demo-dev-poct324'
+param containerAppEnvironmentName = 'cae-demo-dev-poct324'
 
 // Bot Service Authentication Configuration
 // Option 1: SingleTenant with auto App Registration creation
