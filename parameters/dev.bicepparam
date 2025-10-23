@@ -3,7 +3,7 @@ using '../bicep/main.bicep'
 // Development environment parameters
 param location = 'westeurope'
 param environment = 'dev'
-param projectName = 'demorpoject'
+param projectName = 'iacdemo'
 
 // Bot Service location parameter (must use allowed regions)
 param botServiceLocation = 'westeurope'
