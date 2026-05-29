@@ -10,6 +10,7 @@ This repository contains Infrastructure as Code (IaC) templates using Azure Bice
 ├── bicep/
 │   ├── modules/           # Reusable Bicep modules
 │   └── main.bicep         # Main deployment template
+├── src/                   # Node.js app deployed to Azure Container Apps
 ├── parameters/            # Parameter files for different environments
 └── README.md
 ```
@@ -38,6 +39,14 @@ az deployment group create \
 ### GitHub Actions Deployment
 
 Push changes to trigger automated deployment through GitHub Actions workflows.
+Changes in `src/` build and publish the Node.js container image to Azure Container Registry, then update the deployed Azure Container App.
+
+### Local Node.js App Test
+
+```bash
+cd src
+npm test
+```
 
 ## Configuration
 

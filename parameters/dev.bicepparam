@@ -14,6 +14,9 @@ param searchServiceName = 'srch-demo-dev-oct324'
 param aiFoundryName = 'ai-demo-dev-oct324'
 param botServiceName = 'bot-demo-dev-oct324'
 param containerAppEnvironmentName = 'cae-demo-dev-oct324'
+param containerAppName = 'ca-demo-dev-oct324'
+param containerRegistryName = 'acrdemodevoct324'
+param nodeAppImage = 'acrdemodevoct324.azurecr.io/nodejs-app:latest'
 
 // Bot Service Authentication Configuration
 // Option 1: SingleTenant with auto App Registration creation

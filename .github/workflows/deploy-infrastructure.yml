@@ -8,6 +8,7 @@ on:
     paths:
       - 'bicep/**'
       - 'parameters/**'
+      - 'src/**'
       - '.github/workflows/deploy-infrastructure.yml'
   pull_request:
     branches:
@@ -15,6 +16,7 @@ on:
     paths:
       - 'bicep/**'
       - 'parameters/**'
+      - 'src/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -76,11 +78,26 @@ jobs:
           azcliversion: latest
           inlineScript: |
             RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_DEV }}"
+            DEPLOYMENT_NAME="dev-${{ github.run_id }}"
             az deployment group create \
               --resource-group $RESOURCE_GROUP_NAME \
               --template-file bicep/main.bicep \
               --parameters parameters/dev.bicepparam \
-              --verbose  
+              --parameters nodeAppImage='mcr.microsoft.com/azuredocs/containerapps-helloworld:latest' \
+              --name $DEPLOYMENT_NAME \
+              --verbose
+
+            ACR_NAME=$(az deployment group show --resource-group $RESOURCE_GROUP_NAME --name $DEPLOYMENT_NAME --query "properties.outputs.containerRegistryName.value" -o tsv)
+            NODE_APP_NAME=$(az deployment group show --resource-group $RESOURCE_GROUP_NAME --name $DEPLOYMENT_NAME --query "properties.outputs.nodeAppName.value" -o tsv)
+            NODE_APP_IMAGE="${ACR_NAME}.azurecr.io/nodejs-app:${{ github.sha }}"
+
+            az acr build --registry $ACR_NAME --image "nodejs-app:${{ github.sha }}" src
+            az containerapp update \
+              --name $NODE_APP_NAME \
+              --resource-group $RESOURCE_GROUP_NAME \
+              --image $NODE_APP_IMAGE \
+              --registry-server "${ACR_NAME}.azurecr.io" \
+              --registry-identity system
 
 # Comment
   deploy-prod:
@@ -108,8 +125,23 @@ jobs:
           azcliversion: latest
           inlineScript: |
             RESOURCE_GROUP_NAME="${{ vars.RESOURCE_GROUP_NAME_PROD }}"
+            DEPLOYMENT_NAME="prod-${{ github.run_id }}"
             az deployment group create \
               --resource-group $RESOURCE_GROUP_NAME \
               --template-file bicep/main.bicep \
               --parameters parameters/prod.bicepparam \
+              --parameters nodeAppImage='mcr.microsoft.com/azuredocs/containerapps-helloworld:latest' \
+              --name $DEPLOYMENT_NAME \
               --verbose
+
+            ACR_NAME=$(az deployment group show --resource-group $RESOURCE_GROUP_NAME --name $DEPLOYMENT_NAME --query "properties.outputs.containerRegistryName.value" -o tsv)
+            NODE_APP_NAME=$(az deployment group show --resource-group $RESOURCE_GROUP_NAME --name $DEPLOYMENT_NAME --query "properties.outputs.nodeAppName.value" -o tsv)
+            NODE_APP_IMAGE="${ACR_NAME}.azurecr.io/nodejs-app:${{ github.sha }}"
+
+            az acr build --registry $ACR_NAME --image "nodejs-app:${{ github.sha }}" src
+            az containerapp update \
+              --name $NODE_APP_NAME \
+              --resource-group $RESOURCE_GROUP_NAME \
+              --image $NODE_APP_IMAGE \
+              --registry-server "${ACR_NAME}.azurecr.io" \
+              --registry-identity system

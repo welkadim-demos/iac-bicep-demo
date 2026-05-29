@@ -37,6 +37,19 @@ param botServiceName string = 'bot-${projectName}-${environment}-${uniqueString(
 @maxLength(32)
 param containerAppEnvironmentName string = 'cae-${projectName}-${environment}-${take(uniqueString(resourceGroup().id), 8)}'
 
+@description('Container App name (2-32 chars, lowercase letters, numbers, hyphens)')
+@minLength(2)
+@maxLength(32)
+param containerAppName string = 'ca-${projectName}-${environment}-${take(uniqueString(resourceGroup().id), 8)}'
+
+@description('Azure Container Registry name (5-50 chars, lowercase letters and numbers)')
+@minLength(5)
+@maxLength(50)
+param containerRegistryName string = 'acr${replace('${projectName}${environment}', '-', '')}${take(uniqueString(resourceGroup().id), 8)}'
+
+@description('Container image for the Node.js app')
+param nodeAppImage string = '${containerRegistryName}.azurecr.io/nodejs-app:latest'
+
 @description('Bot Service authentication type')
 @allowed(['SingleTenant', 'UserAssignedMSI'])
 param botAuthType string = 'SingleTenant'
@@ -137,6 +150,47 @@ module containerAppEnvironment 'modules/container-app-environment.bicep' = {
   }
 }
 
+// Azure Container Registry Module
+module containerRegistry 'modules/container-registry.bicep' = {
+  params: {
+    containerRegistryName: containerRegistryName
+    location: location
+    skuName: 'Basic'
+    adminUserEnabled: false
+    tags: tags
+  }
+}
+
+// Node.js Container App Module
+module nodeApp 'modules/container-app.bicep' = {
+  params: {
+    containerAppName: containerAppName
+    location: location
+    managedEnvironmentId: containerAppEnvironment.outputs.containerAppEnvironmentId
+    image: nodeAppImage
+    targetPort: 3000
+    minReplicas: 1
+    maxReplicas: 2
+    ingressExternal: true
+    registryServer: containerRegistry.outputs.loginServer
+    tags: tags
+  }
+}
+
+resource deployedContainerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+  name: containerRegistry.outputs.containerRegistryName
+}
+
+resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(deployedContainerRegistry.id, nodeApp.outputs.containerAppPrincipalId, 'AcrPull')
+  scope: deployedContainerRegistry
+  properties: {
+    principalId: nodeApp.outputs.containerAppPrincipalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+  }
+}
+
 // Outputs
 output resourceGroupName string = resourceGroup().name
 output location string = location
@@ -169,3 +223,7 @@ output containerAppEnvironmentName string = containerAppEnvironment.outputs.cont
 output containerAppEnvironmentId string = containerAppEnvironment.outputs.containerAppEnvironmentId
 output containerAppEnvironmentDefaultDomain string = containerAppEnvironment.outputs.defaultDomain
 output containerAppEnvironmentStaticIp string = containerAppEnvironment.outputs.staticIp
+output containerRegistryName string = containerRegistry.outputs.containerRegistryName
+output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
+output nodeAppName string = nodeApp.outputs.containerAppName
+output nodeAppUrl string = nodeApp.outputs.containerAppUrl
