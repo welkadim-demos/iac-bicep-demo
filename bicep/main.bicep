@@ -178,11 +178,11 @@ module nodeApp 'modules/container-app.bicep' = {
 }
 
 resource deployedContainerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: containerRegistry.outputs.containerRegistryName
+  name: containerRegistryName
 }
 
 resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(deployedContainerRegistry.id, nodeApp.outputs.containerAppPrincipalId, 'AcrPull')
+  name: guid(resourceGroup().id, containerRegistryName, containerAppName, 'AcrPull')
   scope: deployedContainerRegistry
   properties: {
     principalId: nodeApp.outputs.containerAppPrincipalId
