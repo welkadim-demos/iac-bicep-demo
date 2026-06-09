@@ -37,6 +37,79 @@ param botServiceName string = 'bot-${projectName}-${environment}-${uniqueString(
 @maxLength(32)
 param containerAppEnvironmentName string = 'cae-${projectName}-${environment}-${take(uniqueString(resourceGroup().id), 8)}'
 
+@description('Whether to deploy Azure Cache for Redis')
+param deployRedisCache bool = false
+
+@description('Whether to deploy Azure Database for PostgreSQL flexible server')
+param deployPostgreSql bool = false
+
+@description('Azure Cache for Redis name (1-63 chars, lowercase letters, numbers, hyphens)')
+@minLength(1)
+@maxLength(63)
+param redisCacheName string = 'redis-${projectName}-${environment}-${take(uniqueString(resourceGroup().id), 6)}'
+
+@description('Redis cache SKU')
+@allowed(['Basic', 'Standard', 'Premium'])
+param redisCacheSkuName string = 'Standard'
+
+@description('Redis cache capacity')
+@allowed([0, 1, 2, 3, 4, 5, 6])
+param redisCacheCapacity int = 1
+
+@description('Azure Database for PostgreSQL flexible server name (3-63 chars, lowercase letters, numbers, hyphens)')
+@minLength(3)
+@maxLength(63)
+param postgreSqlServerName string = 'psql-${projectName}-${environment}-${take(uniqueString(resourceGroup().id), 8)}'
+
+@description('Administrator login name for Azure Database for PostgreSQL flexible server')
+param postgreSqlAdministratorLogin string = 'pgadminuser'
+
+@description('Administrator login password for Azure Database for PostgreSQL flexible server. Required when deployPostgreSql is true.')
+@secure()
+param postgreSqlAdministratorLoginPassword string = ''
+
+@description('PostgreSQL compute SKU name')
+param postgreSqlSkuName string = 'Standard_B1ms'
+
+@description('PostgreSQL compute tier')
+@allowed(['Burstable', 'GeneralPurpose', 'MemoryOptimized'])
+param postgreSqlTier string = 'Burstable'
+
+@description('Availability zone for the PostgreSQL flexible server (-1 disables zonal placement)')
+@allowed([-1, 1, 2, 3])
+param postgreSqlAvailabilityZone int = -1
+
+@description('PostgreSQL engine version')
+@allowed(['11', '12', '13', '14', '15', '16', '17', '18'])
+param postgreSqlVersion string = '16'
+
+@description('Storage size in GB for the PostgreSQL flexible server')
+@minValue(32)
+param postgreSqlStorageSizeGB int = 32
+
+@description('Backup retention in days for the PostgreSQL flexible server')
+@minValue(7)
+@maxValue(35)
+param postgreSqlBackupRetentionDays int = 7
+
+@description('Databases to create on the PostgreSQL flexible server')
+param postgreSqlDatabases array = [
+  {
+    name: 'appdb'
+    charset: 'UTF8'
+    collation: 'en_US.utf8'
+  }
+]
+
+@description('Firewall rules to create on the PostgreSQL flexible server')
+param postgreSqlFirewallRules array = [
+  {
+    name: 'AllowAzureServices'
+    startIpAddress: '0.0.0.0'
+    endIpAddress: '0.0.0.0'
+  }
+]
+
 @description('Bot Service authentication type')
 @allowed(['SingleTenant', 'UserAssignedMSI'])
 param botAuthType string = 'SingleTenant'
@@ -85,6 +158,43 @@ module searchService 'modules/search-service.bicep' = {
     publicNetworkAccess: 'enabled'
     semanticSearch: 'free'
     disableLocalAuth: false
+    tags: tags
+  }
+}
+
+// Azure Cache for Redis Module
+module redisCache 'modules/redis-cache.bicep' = if (deployRedisCache) {
+  params: {
+    redisCacheName: redisCacheName
+    location: location
+    skuName: redisCacheSkuName
+    capacity: redisCacheCapacity
+    publicNetworkAccess: 'Enabled'
+    enableNonSslPort: false
+    minimumTlsVersion: '1.2'
+    redisVersion: '6'
+    tags: tags
+  }
+}
+
+// Azure Database for PostgreSQL Flexible Server Module
+module postgreSql 'modules/postgresql-flexible-server.bicep' = if (deployPostgreSql) {
+  params: {
+    postgreSqlServerName: postgreSqlServerName
+    location: location
+    administratorLogin: postgreSqlAdministratorLogin
+    administratorLoginPassword: postgreSqlAdministratorLoginPassword
+    skuName: postgreSqlSkuName
+    tier: postgreSqlTier
+    availabilityZone: postgreSqlAvailabilityZone
+    publicNetworkAccess: 'Enabled'
+    highAvailability: 'Disabled'
+    version: postgreSqlVersion
+    storageSizeGB: postgreSqlStorageSizeGB
+    backupRetentionDays: postgreSqlBackupRetentionDays
+    geoRedundantBackup: 'Disabled'
+    databases: postgreSqlDatabases
+    firewallRules: postgreSqlFirewallRules
     tags: tags
   }
 }
@@ -144,6 +254,10 @@ output environment string = environment
 output resourcePrefix string = resourcePrefix
 output storageAccountName string = storageAccount.outputs.storageAccountName
 output storageAccountId string = storageAccount.outputs.storageAccountId
+output redisCacheName string = deployRedisCache ? redisCache!.outputs.redisCacheName : ''
+output redisCacheId string = deployRedisCache ? redisCache!.outputs.redisCacheId : ''
+output redisCacheHostName string = deployRedisCache ? redisCache!.outputs.hostName : ''
+output redisCacheSslPort int = deployRedisCache ? redisCache!.outputs.sslPort : 0
 output searchServiceName string = searchService.outputs.searchServiceName
 output searchServiceId string = searchService.outputs.searchServiceId
 output searchServiceUrl string = searchService.outputs.searchServiceUrl
@@ -169,3 +283,7 @@ output containerAppEnvironmentName string = containerAppEnvironment.outputs.cont
 output containerAppEnvironmentId string = containerAppEnvironment.outputs.containerAppEnvironmentId
 output containerAppEnvironmentDefaultDomain string = containerAppEnvironment.outputs.defaultDomain
 output containerAppEnvironmentStaticIp string = containerAppEnvironment.outputs.staticIp
+output postgreSqlServerName string = deployPostgreSql ? postgreSql!.outputs.postgreSqlServerName : ''
+output postgreSqlServerId string = deployPostgreSql ? postgreSql!.outputs.postgreSqlServerId : ''
+output postgreSqlServerFqdn string = deployPostgreSql ? postgreSql!.outputs.fqdn : ''
+output postgreSqlDatabaseNames array = deployPostgreSql ? postgreSql!.outputs.databaseNames : []
