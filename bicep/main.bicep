@@ -37,6 +37,15 @@ param botServiceName string = 'bot-${projectName}-${environment}-${uniqueString(
 @maxLength(32)
 param containerAppEnvironmentName string = 'cae-${projectName}-${environment}-${take(uniqueString(resourceGroup().id), 8)}'
 
+@description('Azure Managed Redis cache name (1-60 chars, alphanumeric, hyphens)')
+@minLength(1)
+@maxLength(60)
+param redisCacheName string = 'redis-${projectName}-${environment}-${take(uniqueString(resourceGroup().id), 8)}'
+
+@description('SKU for the Azure Managed Redis cache')
+@allowed(['Balanced_B0', 'Balanced_B1', 'Balanced_B3', 'Balanced_B5', 'MemoryOptimized_M10', 'ComputeOptimized_X3', 'ComputeOptimized_X5'])
+param redisCacheSkuName string = 'Balanced_B0'
+
 @description('Bot Service authentication type')
 @allowed(['SingleTenant', 'UserAssignedMSI'])
 param botAuthType string = 'SingleTenant'
@@ -137,6 +146,21 @@ module containerAppEnvironment 'modules/container-app-environment.bicep' = {
   }
 }
 
+// Azure Managed Redis Cache Module
+module redisCache 'modules/redis-cache.bicep' = {
+  params: {
+    redisCacheName: redisCacheName
+    location: location
+    skuName: redisCacheSkuName
+    clusteringPolicy: 'OSSCluster'
+    evictionPolicy: 'NoEviction'
+    clientProtocol: 'Encrypted'
+    minimumTlsVersion: '1.2'
+    highAvailability: 'Enabled'
+    tags: tags
+  }
+}
+
 // Outputs
 output resourceGroupName string = resourceGroup().name
 output location string = location
@@ -169,3 +193,17 @@ output containerAppEnvironmentName string = containerAppEnvironment.outputs.cont
 output containerAppEnvironmentId string = containerAppEnvironment.outputs.containerAppEnvironmentId
 output containerAppEnvironmentDefaultDomain string = containerAppEnvironment.outputs.defaultDomain
 output containerAppEnvironmentStaticIp string = containerAppEnvironment.outputs.staticIp
+
+// Redis Cache Outputs
+@description('The name of the Azure Managed Redis cache')
+output redisCacheName string = redisCache.outputs.redisCacheName
+
+@description('The resource ID of the Azure Managed Redis cache')
+output redisCacheId string = redisCache.outputs.redisCacheId
+
+@description('The host name of the Azure Managed Redis cache')
+output redisCacheHostName string = redisCache.outputs.redisCacheHostName
+
+@description('The port used to connect to the Azure Managed Redis cache')
+output redisCachePort int = redisCache.outputs.redisCachePort
+
