@@ -14,6 +14,8 @@ param searchServiceName = 'srch-demo-dev-poct324'
 param aiFoundryName = 'ai-demo-dev-poct324'
 param botServiceName = 'bot-demo-dev-poct324'
 param containerAppEnvironmentName = 'cae-demo-dev-poct324'
+param redisCacheName = 'redis-demo-dev-poct324'
+param redisCacheSkuName = 'Balanced_B0'
 
 // Bot Service Authentication Configuration
 // Option 1: SingleTenant with auto App Registration creation
