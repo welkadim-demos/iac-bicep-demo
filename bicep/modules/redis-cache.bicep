@@ -33,6 +33,9 @@ param minimumTlsVersion string = '1.2'
 @allowed(['Enabled', 'Disabled'])
 param highAvailability string = 'Enabled'
 
+@description('Port used by clients to connect to the Redis database (default is the standard Azure Managed Redis port)')
+param databasePort int = 10000
+
 @description('Tags to apply to the Redis cache resources')
 param tags object = {}
 
@@ -58,7 +61,7 @@ resource redisDatabase 'Microsoft.Cache/redisEnterprise/databases@2024-09-01-pre
     clientProtocol: clientProtocol
     clusteringPolicy: clusteringPolicy
     evictionPolicy: evictionPolicy
-    port: 10000
+    port: databasePort
   }
 }
 
